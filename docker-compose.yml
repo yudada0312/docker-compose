@@ -1,0 +1,108 @@
+version: '3'
+#APP_PATH=/c/Users/user/Desktop/test/ark-api
+networks:
+  app-tier:
+    driver: bridge
+volumes:
+    sql-data:    
+services:
+    #webapp:
+     #   build:
+      #    context: .
+       #   dockerfile: dockerfile
+       # image: yudada/laravel
+    echo-server:
+        #image: mintopia/laravel-echo-server
+        image: yudada/echo-server
+        container_name: echo_server
+        ports:
+          - 6001:6001
+        volumes:
+            #- "/c/Users/user/Desktop/test/laravel-echo-server:/opt/laravel-echo-server"
+            - "${APP_PATH}/laravel-echo-server.json:/opt/laravel-echo-server/laravel-echo-server.json"
+        networks:
+           - app-tier    
+    db:
+        #image: mysql
+        image: mariadb:latest
+        container_name: mariadb
+        ports:
+          - 3306:3306
+        environment:
+          - MYSQL_ROOT_PASSWORD=123456
+          #-  MYSQL_DATABASE=test
+          #-  DB_HOST=mysql
+          -  DB_USERNAME=root
+        networks:
+          - app-tier
+        volumes:
+          #- "/c/Users/user/Desktop/test/sql/init.sql:/docker-entrypoint-initdb.d/init.sql"
+          #- "/c/Users/user/Desktop/test/sql_data/:/var/lib/mysql"
+          - sql-data:/var/lib/mysql
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin
+        container_name: phpmyadmin
+        depends_on: 
+                - db    
+        ports:
+          - 8080:80
+        networks:
+          - app-tier
+    nginx:
+        image: yudada/nginx
+        container_name: nginx
+        ports:
+            - 880:80
+        volumes:
+            - "${APP_PATH}:/usr/share/nginx/html"
+        #     - "/c/Users/user/Desktop/test/nginx/conf.d:/etc/nginx/conf.d"
+        #     - "/c/Users/user/Desktop/test/log/nginx:/var/log/nginx"
+        depends_on: 
+            - php-fpm
+    php-fpm:
+        image: yudada/laravel-www
+        container_name: php-fpm
+        environment:
+            CONTAINER_ROLE: app
+        #command: ["php-fpm"]
+        # ports:
+        #     - 9000:9000  
+        volumes:
+            - "${APP_PATH}:/var/www/html"
+            #- "/c/Users/user/Desktop/test/php/:/usr/local/etc/php"
+    queue:
+        image: yudada/laravel-www
+        container_name: queue
+        environment:
+            CONTAINER_ROLE: queue
+        volumes:
+            - "${APP_PATH}:/var/www/html"
+        depends_on: 
+            - redis
+        networks:
+           - app-tier
+    # scheduler:
+    #     image: yudada/laravel-www
+    #     container_name: scheduler
+    #     environment:
+    #         CONTAINER_ROLE: scheduler
+    #     volumes:
+    #         - "${APP_PATH}:/var/www"
+    #     depends_on: 
+    #         - app
+    #     networks:
+    #        - app-tier       
+    redis:
+      container_name: redis
+      image: redis:4.0.10-alpine
+      command: ["redis-server", "--appendonly", "yes"]
+      restart: always
+      ports:
+          - "6379:6379"
+      #volumes:
+          #- "/c/Users/user/Desktop/test/redis:/data"
+    beanstalkd:
+        container_name: beanstalkd
+        image: schickling/beanstalkd
+        ports:
+          - "11300:11300"      
