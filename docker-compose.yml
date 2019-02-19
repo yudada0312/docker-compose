@@ -1,5 +1,7 @@
 version: '3'
 #APP_PATH=/c/Users/user/Desktop/test/ark-api
+#APP_DB_PATH=sql-data
+#APP_REDIS_PATH=/c/Users/user/Desktop/test/redis
 networks:
   app-tier:
     driver: bridge
@@ -38,7 +40,7 @@ services:
         volumes:
           #- "/c/Users/user/Desktop/test/sql/init.sql:/docker-entrypoint-initdb.d/init.sql"
           #- "/c/Users/user/Desktop/test/sql_data/:/var/lib/mysql"
-          - sql-data:/var/lib/mysql
+          - ${APP_DB_PATH}:/var/lib/mysql
     phpmyadmin:
         image: phpmyadmin/phpmyadmin
         container_name: phpmyadmin
@@ -81,17 +83,17 @@ services:
             - redis
         networks:
            - app-tier
-    # scheduler:
-    #     image: yudada/laravel-www
-    #     container_name: scheduler
-    #     environment:
-    #         CONTAINER_ROLE: scheduler
-    #     volumes:
-    #         - "${APP_PATH}:/var/www"
-    #     depends_on: 
-    #         - app
-    #     networks:
-    #        - app-tier       
+    scheduler:
+        image: yudada/laravel-www
+        container_name: scheduler
+        environment:
+            CONTAINER_ROLE: scheduler
+        volumes:
+            - "${APP_PATH}:/var/www/html"
+        depends_on: 
+            - php-fpm
+        networks:
+           - app-tier       
     redis:
       container_name: redis
       image: redis:4.0.10-alpine
@@ -99,8 +101,8 @@ services:
       restart: always
       ports:
           - "6379:6379"
-      #volumes:
-          #- "/c/Users/user/Desktop/test/redis:/data"
+      volumes:
+          - "${APP_REDIS_PATH}:/data"
     beanstalkd:
         container_name: beanstalkd
         image: schickling/beanstalkd
