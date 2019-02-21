@@ -14,32 +14,26 @@ services:
        #   dockerfile: dockerfile
        # image: yudada/laravel
     echo-server:
-        #image: mintopia/laravel-echo-server
         image: yudada/echo-server
         container_name: echo_server
         ports:
           - 6001:6001
         volumes:
-            #- "/c/Users/user/Desktop/test/laravel-echo-server:/opt/laravel-echo-server"
             - "${APP_PATH}/laravel-echo-server.json:/opt/laravel-echo-server/laravel-echo-server.json"
         networks:
            - app-tier    
     db:
-        #image: mysql
         image: mariadb:latest
         container_name: mariadb
         ports:
           - 3306:3306
         environment:
           - MYSQL_ROOT_PASSWORD=123456
-          #-  MYSQL_DATABASE=test
-          #-  DB_HOST=mysql
           -  DB_USERNAME=root
         networks:
           - app-tier
         volumes:
           #- "/c/Users/user/Desktop/test/sql/init.sql:/docker-entrypoint-initdb.d/init.sql"
-          #- "/c/Users/user/Desktop/test/sql_data/:/var/lib/mysql"
           - ${APP_DB_PATH}:/var/lib/mysql
     phpmyadmin:
         image: phpmyadmin/phpmyadmin
@@ -66,7 +60,6 @@ services:
         container_name: php-fpm
         environment:
             CONTAINER_ROLE: app
-        #command: ["php-fpm"]
         # ports:
         #     - 9000:9000  
         volumes:
@@ -79,21 +72,23 @@ services:
             CONTAINER_ROLE: queue
         volumes:
             - "${APP_PATH}:/var/www/html"
-        depends_on: 
+        depends_on:
             - redis
         networks:
            - app-tier
-    scheduler:
-        image: yudada/laravel-www
-        container_name: scheduler
-        environment:
-            CONTAINER_ROLE: scheduler
-        volumes:
-            - "${APP_PATH}:/var/www/html"
-        depends_on: 
-            - php-fpm
-        networks:
-           - app-tier       
+    # scheduler:
+    #     image: yudada/laravel-www
+    #     container_name: scheduler
+    #     environment:
+    #         CONTAINER_ROLE: scheduler
+    #     volumes:
+    #         - "${APP_PATH}:/var/www/html"
+    #     depends_on:
+    #         - nginx
+    #         - redis
+    #         - php-fpm
+    #     networks:
+    #        - app-tier       
     redis:
       container_name: redis
       image: redis:4.0.10-alpine
